@@ -26,14 +26,13 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
    * @param options Configuration options
    */
   constructor(
-    kvNamespace: KVNamespace | string,
+    kvNamespace: KVNamespace,
     options: CloudflareKVCacheOptions = {}
   ) {
     this.keyPrefix = options.keyPrefix || 'schematic:';
     this.defaultTTL = options.ttl || 5000; // 5 seconds default
     
-    // Determine if we're in a Cloudflare Worker context
-    this.kv = kvNamespace as KVNamespace;
+    this.kv = kvNamespace;
   }
 
   /**
@@ -43,8 +42,8 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
    */
   async get(key: string): Promise<T | undefined> {
     const fullKey = this.getFullKey(key);
-    const value = await this.kv.get(fullKey, 'json') as T | null;
-    return value || undefined;
+    const value = await this.kv.get<T>(fullKey, "json");;
+    return value === null ? undefined : value;
   }
 
   /**
@@ -85,10 +84,12 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
     const { keys } = await this.kv.list({ prefix: this.keyPrefix });
     
     // Delete keys not in the list to keep
-    const deletePromises = keys
-      .filter((key: { name: string }) => !fullKeysToKeep.has(key.name))
-      .map((key: { name: string }) => this.kv.delete(key.name));
-    
+    const deletePromises = keys.reduce(
+      (acc: Promise<void>[], key) =>
+        fullKeysToKeep.has(key.name) ? acc : [...acc, this.kv.delete(key.name)],
+      []
+    );
+
     await Promise.all(deletePromises);
   }
 
@@ -100,7 +101,7 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
     const { keys } = await this.kv.list({ prefix: this.keyPrefix });
     
     // Delete all keys
-    const deletePromises = keys.map((key: { name: string }) => this.kv.delete(key.name));
+    const deletePromises = keys.map((key) => this.kv.delete(key.name));
     await Promise.all(deletePromises);
   }
 
