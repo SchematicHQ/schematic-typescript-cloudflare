@@ -42,7 +42,7 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
    */
   async get(key: string): Promise<T | undefined> {
     const fullKey = this.getFullKey(key);
-    const value = await this.kv.get<T>(fullKey, "json");;
+    const value = await this.kv.get<T>(fullKey, "json");
     return value === null ? undefined : value;
   }
 
@@ -80,15 +80,16 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
   async deleteAllExcept(keysToKeep: string[]): Promise<void> {
     const fullKeysToKeep = new Set(keysToKeep.map(k => this.getFullKey(k)));
     
-    // List all keys with our prefix
-    const { keys } = await this.kv.list({ prefix: this.keyPrefix });
+  // List all keys with our prefix
+  const { keys } = await this.kv.list({ prefix: this.keyPrefix });
     
-    // Delete keys not in the list to keep
-    const deletePromises = keys.reduce(
-      (acc: Promise<void>[], key) =>
-        fullKeysToKeep.has(key.name) ? acc : [...acc, this.kv.delete(key.name)],
-      []
-    );
+  // Delete keys not in the list to keep
+  const deletePromises: Promise<void>[] = [];
+    keys.forEach((key) => {
+      if (!fullKeysToKeep.has(key.name)) {
+        deletePromises.push(this.kv.delete(key.name));
+      }
+    });
 
     await Promise.all(deletePromises);
   }
