@@ -5,55 +5,31 @@ Cloudflare KV cache adapter for Schematic SDK.
 ## Installation
 
 ```bash
-npm install schematic-typescript-cloudflare
+npm install @schematichq/schematic-typescript-cloudflare
 ```
 
 ## Usage
 
-### In a Cloudflare Worker environment
-
-```typescript
-import { CloudflareKVCache } from 'schematic-typescript-cloudflare';
-
-// Inside a Cloudflare Worker
-export default {
-  async fetch(request, env, ctx) {
-    // Create a CloudflareKVCache instance
-    const cache = new CloudflareKVCache(env.MY_KV_NAMESPACE, {
-      keyPrefix: 'my-app:',  // Optional key prefix
-      ttl: 60000,            // Optional TTL in ms (default: 5000ms)
-    });
-
-    // Use the cache
-    await cache.set('key', { data: 'example' });
-    const data = await cache.get('key');
-    
-    // Use in your application logic
-    return new Response(JSON.stringify(data), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-};
-```
-
 ### With Schematic SDK
 
 ```typescript
-import { Schematic } from '@schematicio/sdk';
-import { CloudflareKVCache } from 'schematic-typescript-cloudflare';
+import { SchematicClient } from "@schematichq/schematic-typescript-node";
+import { CloudflareKVCache } from "@schematichq/schematic-typescript-cloudflare";
 
 // Inside a Cloudflare Worker
 export default {
   async fetch(request, env, ctx) {
     // Create a CloudflareKVCache instance
-    const cache = new CloudflareKVCache(env.MY_KV_NAMESPACE);
+    const cache = new CloudflareKVCache<boolean>(env.MY_KV_NAMESPACE, {
+        ttl: 1000 * 60 * 60, // 1 hour
+      });
     
     // Initialize Schematic with the cache
-    const schematic = new Schematic({
+    const schematic = new SchematicClient({
       apiKey: env.SCHEMATIC_API_KEY,
-      cache,
-    });
-    
+      cacheProviders: {
+        flagChecks: [cache],
+      }});
     // Your application logic...
   }
 };
