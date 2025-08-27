@@ -1,6 +1,15 @@
 // CloudflareKVCache implementation for TypeScript
-import type { KVNamespace } from '@cloudflare/workers-types';
 import { CacheProvider } from './cache-provider';
+
+/**
+ * Interface for KV namespace operations that matches Cloudflare Workers KV API
+ */
+export interface KVNamespace {
+  get<T>(key: string, type: 'json'): Promise<T | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(options?: { prefix?: string }): Promise<{ keys: Array<{ name: string }> }>;
+}
 
 /**
  * Options for configuring the CloudflareKVCache
@@ -42,8 +51,16 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
    */
   async get(key: string): Promise<T | undefined> {
     const fullKey = this.getFullKey(key);
-    const value = await this.kv.get<T>(fullKey, "json");
-    return value === null ? undefined : value;
+    
+    try {
+      // Use the typed version for better type safety
+      const value = await this.kv.get<T>(fullKey, 'json');
+      return value === null ? undefined : value;
+    } catch (error) {
+      // If typed version fails, log warning and return undefined
+      console.warn(`Failed to get cached value for key ${fullKey}:`, error);
+      return undefined;
+    }
   }
 
   /**

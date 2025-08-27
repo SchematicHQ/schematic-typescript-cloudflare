@@ -37,12 +37,25 @@ export default {
 
 ## API
 
+### KVNamespace Interface
+
+```typescript
+interface KVNamespace {
+  get<T>(key: string, type: 'json'): Promise<T | null>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(options?: { prefix?: string }): Promise<{ keys: Array<{ name: string }> }>;
+}
+```
+
+The interface matches the Cloudflare Workers KV API, including support for typed `get<T>()` operations for enhanced type safety.
+
 ### CloudflareKVCache
 
 ```typescript
 class CloudflareKVCache<T> {
   constructor(
-    kvNamespace: KVNamespace | string,
+    kvNamespace: KVNamespace,
     options?: {
       keyPrefix?: string;  // Default: 'schematic:'
       ttl?: number;        // Default: 5000ms

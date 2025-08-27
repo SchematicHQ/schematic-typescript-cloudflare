@@ -93,6 +93,23 @@ describe("CloudflareKVCache", () => {
       const result = await cache.get("expired-key");
       expect(result).toBeUndefined();
     });
+
+    it("should use typed KV get when available", async () => {
+      const testData = { id: 123, name: "Test User", active: true };
+      await kvNamespace.put("schematic:typed-key", JSON.stringify(testData));
+      
+      // Spy on the get method to verify it's called with the 'json' type
+      const getSpy = jest.spyOn(kvNamespace, "get");
+      
+      const result = await cache.get("typed-key");
+      
+      // Verify the typed version was called
+      expect(getSpy).toHaveBeenCalledWith("schematic:typed-key", "json");
+      expect(result).toEqual(testData);
+      expect(typeof result?.id).toBe("number");
+      expect(typeof result?.name).toBe("string");
+      expect(typeof result?.active).toBe("boolean");
+    });
   });
 
   describe("set", () => {
