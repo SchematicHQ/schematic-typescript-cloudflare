@@ -19,11 +19,8 @@
   ],
   "author": "Schematic",
   "license": "MIT",
-  "peerDependencies": {
-    "@cloudflare/workers-types": "^4.0.0"
-  },
+  "peerDependencies": {},
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250619.0",
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.7",
     "@types/node": "^18.11.9",
