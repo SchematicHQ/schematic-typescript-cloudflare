@@ -13,14 +13,14 @@ npm install @schematichq/schematic-typescript-cloudflare
 ### With Schematic SDK
 
 ```typescript
-import { SchematicClient } from "@schematichq/schematic-typescript-node";
+import { SchematicClient, type CheckFlagWithEntitlementResponse } from "@schematichq/schematic-typescript-node";
 import { CloudflareKVCache } from "@schematichq/schematic-typescript-cloudflare";
 
 // Inside a Cloudflare Worker
 export default {
   async fetch(request, env, ctx) {
     // Create a CloudflareKVCache instance
-    const cache = new CloudflareKVCache<boolean>(env.MY_KV_NAMESPACE, {
+    const cache = new CloudflareKVCache<CheckFlagWithEntitlementResponse>(env.MY_KV_NAMESPACE, {
         ttl: 1000 * 60 * 60, // 1 hour
       });
     
