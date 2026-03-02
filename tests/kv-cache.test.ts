@@ -69,9 +69,9 @@ describe("CloudflareKVCache", () => {
   });
 
   describe("get", () => {
-    it("should return undefined for non-existent key", async () => {
+    it("should return null for non-existent key", async () => {
       const result = await cache.get("nonexistent-key");
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
 
     it("should return value for existing key", async () => {
@@ -82,16 +82,16 @@ describe("CloudflareKVCache", () => {
       expect(result).toEqual(testData);
     });
 
-    it("should return undefined for expired keys", async () => {
+    it("should return null for expired keys", async () => {
       const testData = { test: "data" };
       // Add an entry that's already expired (expirationTtl of 0)
       await kvNamespace.put("schematic:expired-key", JSON.stringify(testData), { expirationTtl: -1 });
-      
+
       // Fake the expiration check (KV would normally handle this internally)
       jest.spyOn(kvNamespace, "get").mockResolvedValueOnce(null);
-      
+
       const result = await cache.get("expired-key");
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
 
     it("should use typed KV get when available", async () => {
@@ -152,37 +152,37 @@ describe("CloudflareKVCache", () => {
       expect(spy).toHaveBeenCalledWith("schematic:test-key");
       
       const result = await cache.get("test-key");
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
   });
 
-  describe("deleteAllExcept", () => {
+  describe("deleteMissing", () => {
     it("should delete all keys except those specified", async () => {
       // Set up multiple keys
       await kvNamespace.put("schematic:key1", JSON.stringify({ data: 1 }));
       await kvNamespace.put("schematic:key2", JSON.stringify({ data: 2 }));
       await kvNamespace.put("schematic:key3", JSON.stringify({ data: 3 }));
-      
+
       // Keep key2
-      await cache.deleteAllExcept(["key2"]);
-      
+      await cache.deleteMissing(["key2"]);
+
       // Verify key2 is retained and others are removed
-      expect(await cache.get("key1")).toBeUndefined();
+      expect(await cache.get("key1")).toBeNull();
       expect(await cache.get("key2")).toEqual({ data: 2 });
-      expect(await cache.get("key3")).toBeUndefined();
+      expect(await cache.get("key3")).toBeNull();
     });
-    
+
     it("should handle empty keysToKeep array", async () => {
       // Set up multiple keys
       await kvNamespace.put("schematic:key1", JSON.stringify({ data: 1 }));
       await kvNamespace.put("schematic:key2", JSON.stringify({ data: 2 }));
-      
+
       // Delete all
-      await cache.deleteAllExcept([]);
-      
+      await cache.deleteMissing([]);
+
       // Verify all are gone
-      expect(await cache.get("key1")).toBeUndefined();
-      expect(await cache.get("key2")).toBeUndefined();
+      expect(await cache.get("key1")).toBeNull();
+      expect(await cache.get("key2")).toBeNull();
     });
   });
 

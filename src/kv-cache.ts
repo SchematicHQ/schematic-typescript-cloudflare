@@ -47,19 +47,19 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
   /**
    * Get a value from the KV store
    * @param key Cache key
-   * @returns The cached value, or undefined if not found or expired
+   * @returns The cached value, or null if not found or expired
    */
-  async get(key: string): Promise<T | undefined> {
+  async get(key: string): Promise<T | null> {
     const fullKey = this.getFullKey(key);
-    
+
     try {
       // Use the typed version for better type safety
       const value = await this.kv.get<T>(fullKey, 'json');
-      return value === null ? undefined : value;
+      return value ?? null;
     } catch (error) {
-      // If typed version fails, log warning and return undefined
+      // If typed version fails, log warning and return null
       console.warn(`Failed to get cached value for key ${fullKey}:`, error);
-      return undefined;
+      return null;
     }
   }
 
@@ -67,11 +67,11 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
    * Set a value in the KV store
    * @param key Cache key
    * @param value Value to cache
-   * @param ttlOverride Optional TTL override in milliseconds
+   * @param ttl Optional TTL in milliseconds
    */
-  async set(key: string, value: T, ttlOverride?: number): Promise<void> {
+  async set(key: string, value: T, ttl?: number): Promise<void> {
     const fullKey = this.getFullKey(key);
-    const ttl = ttlOverride ?? this.defaultTTL;
+    ttl = ttl ?? this.defaultTTL;
     
     // TTL in CloudflareKV is in seconds
     const ttlSeconds = Math.max(Math.ceil(ttl / 1000), 60); // Minimum 60s in Cloudflare KV
@@ -91,10 +91,10 @@ export class CloudflareKVCache<T> implements CacheProvider<T> {
   }
 
   /**
-   * Delete all keys except the ones provided
+   * Delete all keys not in the keysToKeep array
    * @param keysToKeep Keys to retain in the cache
    */
-  async deleteAllExcept(keysToKeep: string[]): Promise<void> {
+  async deleteMissing(keysToKeep: string[]): Promise<void> {
     const fullKeysToKeep = new Set(keysToKeep.map(k => this.getFullKey(k)));
     
   // List all keys with our prefix
